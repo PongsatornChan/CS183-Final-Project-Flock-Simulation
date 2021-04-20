@@ -1,0 +1,299 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+</style>
+<title>CS 184 Mesh Editor</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+
+<body>
+
+<h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2017</h1>
+<h1 align="middle">Project 4: Cloth Simulator</h1>
+<h2 align="middle">YOUR NAME, CS184-mp4</h2>
+
+<br><br>
+
+<div>
+
+<h2 align="middle">Overview</h2>
+<p>
+  In this project, we aim to simulate a realistic behavior of a cloth under gravity. For a realistic representation of
+  cloth, we use point mass and spring system to simulate the elastic, tear, and fold behavior of a real cloth.
+
+  This project is my personal favorite. I like the physic-based approach to realistic graphic simulation.
+  Even though there are shortcut and hacks then and there, the result looks
+  amazingly realistic, and I believe this could be a way to render more complex phenomenal in nature. This
+  project inspires my final project ideas.
+</p>
+<h2 align="middle">Part I: Masses and springs</h2>
+  <p>
+    Firstly, we created and add point masses into point_masses list in row major manner with even spacing. Then, for
+    each point mass, we add 3 types of springs to connect with nearby point mass to create a grid of point masses
+    connected by springs. The three types of spring are structural, shearing, and bending. These three springs kept
+    the cloth together, prevented unrealistic stretching and bending.
+  </p>
+  <div align="center">
+    <table style="width=100%">
+      <tr>
+        <td align="middle">
+          <img src="part1_2.png" width="480px" />
+          <figcaption align="middle">Without shearing spring</figcaption>
+        <td align="middle">
+          <img src="part1_3.png" width="480px" />
+          <figcaption align="middle">Only Shearing enable</figcaption>
+      </tr>
+    </table>
+  </div>
+  <div align="center">
+    <td align="middle">
+      <img src="part1_1.png" width="800px" />
+      <figcaption align="middle">All three spring types enable</figcaption>
+  </div>
+<h2 align="middle">Part 2: Simulation via numerical integration</h2>
+  <p>
+    We go through springs one-by-one to calculate and apply the force to involved point masses.
+    Then apply velvet position correction to prevent the cloth from stretching unrealistically.
+  </p>
+  <p>
+    With a high spring constant ks, the cloth is stiffer than cloth with a low spring constant.
+    It also retains the original shape better and fold or bend easily, thanks to stiffer spring.
+  </p>
+  <div align="center">
+    <table style="width=100%">
+      <tr>
+        <td align="middle">
+          <img src="part2_hk.png" width="480px" />
+          <figcaption align="middle">High spring constant: 10000</figcaption>
+        <td align="middle">
+          <img src="part2_lk.png" width="480px" />
+          <figcaption align="middle">Low spring constant: 100</figcaption>
+      </tr>
+    </table>
+  </div>
+  <br>
+  <p>
+    With low density, the cloth has more wiggles and folds due to the lower weight springs need to support, which
+    is similar to real-world behavior. But it doesn't change the falling speed with different density, which a real-world
+    cloth does due to air resistant. The interesting thing is that when the density is high, the cloth behaves like when
+    the spring constant is low, which makes sense since the springs need to support more weight.
+  </p>
+  <div align="center">
+    <td align="middle">
+      <img src="part2_hd.png" width="800px" />
+      <figcaption align="middle">High Density cloth</figcaption>
+  </div>
+  <br>
+  <p>
+    In this simulation, damping is a simplified energy lose. So it is no surprise that the cloth falls much slower and
+    takes shorter amount of time to come to rest when the damping value is high due to significant lose of the kinetic energy. <br>
+    <br>
+    The interesting things are when the damping is zero, the cloth falls really fast and keeps on swinging. We through
+    it would keeps going until the end of time since there are no energy lose, but it is gradually getting slower.
+    This might be because the Constrain position updates we implemented, which constrains and takes energy out of the
+    system when the cloth stretches too much. However, after the initial intense swinging, the cloth swings gently,
+    which minimize the position constrain. I believe it will keeps going like a pendulum clock and never truly stop.
+  </p>
+  <br>
+  <div align="center">
+    <td align="middle">
+      <img src="part2_4pin.png" width="800px" />
+      <figcaption align="middle">pinned4 with default setting</figcaption>
+  </div>
+<h2 align="center">Part 3: Handling collisions with other objects</h2>
+  <p>To handle sphere collisions, we need to know whether the object intersected with the sphere
+    and we bump it up to the surface, if it did. To handle plane intersections, we need to know whether the object intersected with the sphere,
+    which is done by checking if the dot product changed sign since the previous time step. If it did, we keep the plane on top of the surface
+    by computing the correction vector and applying it to the current position.</p>
+  <p>As we increase ks, the cloth becomes stiffness because we're modifyingh the spring constant to make the spring more stiff.</p>
+  <div align="center">
+    <table style="width=100%">
+      <tr>
+        <td align="middle">
+          <img src="part3_1.png" width="260px" />
+          <figcaption align="middle">ks = 500</figcaption>
+        <td align="middle">
+          <img src="part3_2.png" width="260px" />
+          <figcaption align="middle">ks = 5000</figcaption>
+        <td align="middle">
+          <img src="part3_3.png" width="260px" />
+          <figcaption align="middle">ks = 50000</figcaption>
+      </tr>
+    </table>
+    <table style="width=100%">
+      <tr>
+        <td align="middle">
+          <img src="part3_4.png" width="480px" />
+          <figcaption align="middle">Shaded cloth lying at peace</figcaption>
+      </tr>
+    </table>
+  </div>
+<h2 align="center">Part 4: Handling self-collisions</h2>
+  <p>In our implementation, we closely followed the spec guidelines. In generating hashes, a struggle was to generate a unique number for the hash using the position.</p>
+  <p>When we increase ks, the spring becomes more resistant to folding because the spring is exerting more force per meter.
+    Decreasing the ks does the opposite.<br/>
+     When we increase the density, the spring becomes heavier, thus getting harder to fold. Decreasing the density does the opposite.</p>
+  <div align="center">
+    <h4 align="left">Density = 15, ks = 5000</h4>
+    <table style="width=100%">
+      <tr>
+        <td align="middle">
+          <img src="part4_1.png" width="260px" />
+          <figcaption align="middle">Early</figcaption>
+        <td align="middle">
+          <img src="part4_2.png" width="260px" />
+          <figcaption align="middle">Middle</figcaption>
+        <td align="middle">
+          <img src="part4_3.png" width="260px" />
+          <figcaption align="middle">End result</figcaption>
+      </tr>
+    </table>
+    <h4 align="left">Density = 15, ks = 50000</h4>
+    <table style="width=100%">
+      <tr>
+        <td align="middle">
+          <img src="part4_4.png" width="260px" />
+          <figcaption align="middle">Early</figcaption>
+        <td align="middle">
+          <img src="part4_6.png" width="260px" />
+          <figcaption align="middle">Middle</figcaption>
+        <td align="middle">
+          <img src="part4_5.png" width="260px" />
+          <figcaption align="middle">End result</figcaption>
+      </tr>
+    </table>
+    <h4 align="left">Density = 150, ks = 50000</h4>
+    <table style="width=100%">
+      <tr>
+        <td align="middle">
+          <img src="part4_7_ks.png" width="260px" />
+          <figcaption align="middle">Early</figcaption>
+        <td align="middle">
+          <img src="part4_8_ks.png" width="260px" />
+          <figcaption align="middle">Middle</figcaption>
+        <td align="middle">
+          <img src="part4_9_ks.png" width="260px" />
+          <figcaption align="middle">End result</figcaption>
+      </tr>
+    </table>
+    <h4 align="left">Density = 5, ks = 50000</h4>
+    <table style="width=100%">
+      <tr>
+        <td align="middle">
+          <img src="part4_10_den.png" width="260px" />
+          <figcaption align="middle">Early</figcaption>
+        <td align="middle">
+          <img src="part4_11_den.png" width="260px" />
+          <figcaption align="middle">Middle</figcaption>
+        <td align="middle">
+          <img src="part4_12_den.png" width="260px" />
+          <figcaption align="middle">End result</figcaption>
+      </tr>
+    </table>
+  </div>
+<h2 align="center">Part 5: Shaders</h2>
+  <div align="center">
+    <p>In my understanding, the vertex shader applies transformations and changes the positions of vertices.
+       On the other hand, the fragment shader computes the colors, given the vertices produced from the vertex shader.
+       On the high level, to create realistic lighting and material effects, the vertex shader computes the positions of the vertices
+       and the fragment shader computes the color.</p>
+    <h4 align="left">Blinn-Phong shading</h4>
+    <p>The Blinn-Phong shading is used to create realistic shading/lighting effects. It combines 3 lighting parts, ambient lighting, diffuse lighting, and specular lighting.
+     Ambient lighting is used to give the "minimum" lighting because most objects are not completely black, they have some small ambient lighting.
+     Diffuse lighting is used to give diffuse reflections and the specular lighting is used to show specular reflections.
+     The parameters for each of the 3 lightings can be set as a parameter.</p>
+    <table style="width=100%">
+      <tr>
+        <td align="middle">
+          <img src="part5_phong_amb.png" width="480px" />
+          <figcaption align="middle">Only ambient lighting (our ambient coefficient is very small)</figcaption>
+      </tr>
+    </table>
+    <table style="width=100%">
+      <tr>
+        <td align="middle">
+          <img src="part5_phong_diff.png" width="480px" />
+          <figcaption align="middle">Only diffuse lighting</figcaption>
+      </tr>
+    </table>
+    <table style="width=100%">
+      <tr>
+        <td align="middle">
+          <img src="part5_phong_spec.png" width="480px" />
+          <figcaption align="middle">Only specular lighting</figcaption>
+      </tr>
+    </table>
+    <table style="width=100%">
+      <tr>
+        <td align="middle">
+          <img src="part5_phong_all.png" width="480px" />
+          <figcaption align="middle">The entire Blinn-Phong model</figcaption>
+      </tr>
+    </table>
+    <h4 align="left">Texture mapping</h4>
+    <table style="width=100%">
+      <tr>
+        <td align="middle">
+          <img src="part5_custom_texture.png" width="480px" />
+          <figcaption align="middle">Custom texture</figcaption>
+      </tr>
+    </table>
+    <h4 align="left">Bump and displacement mapping</h4>
+    <p>Bump mapping gives the illusion of bumps by modifying the normal vectors of an object.
+     On the other hand, displacement mapping modifies the positions of the vertices, which gives more realistic bumps, compared to bump mapping.</p>
+    <table style="width=100%">
+      <tr>
+        <td align="middle">
+          <img src="part5_bump.png" width="480px" />
+          <figcaption align="middle">Bump mapping</figcaption>
+        <td align="middle">
+          <img src="part5_disp.png" width="480px" />
+          <figcaption align="middle">Displacement mapping</figcaption>
+      </tr>
+    </table>
+    <table style="width=100%">
+      <tr>
+        <td align="middle">
+          <img src="part5_bump_16.png" width="480px" />
+          <figcaption align="middle">Bump mapping with -o 16 -a 16</figcaption>
+        <td align="middle">
+          <img src="part5_disp_16.png" width="480px" />
+          <figcaption align="middle">Displacement mapping with -o 16 -a 16</figcaption>
+      </tr>
+    </table>
+    <table style="width=100%">
+      <tr>
+        <td align="middle">
+          <img src="part5_bump_128.png" width="480px" />
+          <figcaption align="middle">Bump mapping with -o 128 -a 128</figcaption>
+        <td align="middle">
+          <img src="part5_disp_128.png" width="480px" />
+          <figcaption align="middle">Displacement mapping with -o 128 -a 128</figcaption>
+      </tr>
+    </table>
+    <h4 align="left">Mirror shader</h4>
+    <table style="width=100%">
+      <tr>
+        <td align="middle">
+          <img src="part5_mirror.png" width="480px" />
+          <figcaption align="middle">Mirror shading</figcaption>
+      </tr>
+    </table>
+  </div>
+</body>
+</html>
